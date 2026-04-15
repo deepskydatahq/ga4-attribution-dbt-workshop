@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: attribution__first_touch
+    description: >
+      First-touch attribution. For each conversion, credits the earliest
+      session that preceded it for the same customer. Queries the Activity
+      Schema v2 stream and filters by activity name. credit_weight is always 1.0.
+    columns:
+      - name: conversion_id
+        description: Unique identifier for the conversion event.
+        tests:
+          - unique
+          - not_null
+      - name: session_uid
+        description: The session that receives first-touch credit.
+      - name: customer
+        description: Resolved customer identity (anon_id) used for the temporal join.
+      - name: source
+        description: Traffic source of the credited session.
+      - name: medium
+        description: Traffic medium of the credited session.
+      - name: campaign
+        description: Campaign name of the credited session.
+      - name: activity_at
+        description: Timestamp of the credited session.
+      - name: conversion_at
+        description: Timestamp of the conversion event.
+      - name: credit_weight
+        description: Always 1.0 for first-touch.
+
+  - name: attribution__last_touch
+    description: >
+      Last-touch attribution. For each conversion, credits the most recent
+      session that preceded it for the same customer. credit_weight is always 1.0.
+    columns:
+      - name: conversion_id
+        description: Unique identifier for the conversion event.
+        tests:
+          - unique
+          - not_null
+      - name: session_uid
+        description: The session that receives last-touch credit.
+      - name: customer
+        description: Resolved customer identity (anon_id).
+      - name: source
+        description: Traffic source of the credited session.
+      - name: medium
+        description: Traffic medium of the credited session.
+      - name: campaign
+        description: Campaign name of the credited session.
+      - name: activity_at
+        description: Timestamp of the credited session.
+      - name: conversion_at
+        description: Timestamp of the conversion event.
+      - name: credit_weight
+        description: Always 1.0 for last-touch.
+
+  - name: attribution__linear
+    description: >
+      Linear attribution. Credits ALL sessions before a conversion for the
+      same customer, splitting credit equally. SUM(credit_weight) per
+      conversion equals 1.0.
+    columns:
+      - name: conversion_id
+        description: Identifier for the conversion event.
+        tests:
+          - not_null
+      - name: session_uid
+        description: A session that receives a share of linear credit.
+      - name: customer
+        description: Resolved customer identity (anon_id).
+      - name: source
+        description: Traffic source of the credited session.
+      - name: medium
+        description: Traffic medium of the credited session.
+      - name: campaign
+        description: Campaign name of the credited session.
+      - name: activity_at
+        description: Timestamp of the credited session.
+      - name: conversion_at
+        description: Timestamp of the conversion event.
+      - name: credit_weight
+        description: Equal share — 1.0 / touch_count.
+
+  - name: attribution__position_based
+    description: >
+      Position-based (40/20/40) attribution. First touch 40%, last touch 40%,
+      middle touches share 20% equally. Single-touch = 1.0; two-touch = 0.5 each.
+      SUM(credit_weight) per conversion = 1.0.
+    columns:
+      - name: conversion_id
+        description: Identifier for the conversion event.
+        tests:
+          - not_null
+      - name: session_uid
+        description: A session that receives position-based credit.
+      - name: customer
+        description: Resolved customer identity (anon_id).
+      - name: source
+        description: Traffic source of the credited session.
+      - name: medium
+        description: Traffic medium of the credited session.
+      - name: campaign
+        description: Campaign name of the credited session.
+      - name: activity_at
+        description: Timestamp of the credited session.
+      - name: conversion_at
+        description: Timestamp of the conversion event.
+      - name: credit_weight
+        description: 40/40/20 positional weighting with single- and two-touch edge cases.

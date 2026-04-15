@@ -1,0 +1,74 @@
+version: 2
+
+models:
+  - name: activity__session_started
+    description: >
+      Activity schema model for session_start events. Each row represents a
+      session initiation with its associated traffic source attribution and
+      page context, enabling temporal join attribution downstream.
+    columns:
+      - name: activity_id
+        description: Surrogate key derived from session_uid and event_timestamp.
+
+      - name: user_pseudo_id
+        description: The pseudonymous user identifier set by the GA4 client.
+
+      - name: session_uid
+        description: Composite session key (user_pseudo_id + ga_session_id).
+
+      - name: activity_at
+        description: Timestamp of the session_start event in UTC.
+
+      - name: source
+        description: Traffic source, resolved via 3-tier UTM coalescing.
+
+      - name: medium
+        description: Traffic medium, resolved via 3-tier UTM coalescing.
+
+      - name: campaign
+        description: Campaign name, resolved via 3-tier UTM coalescing.
+
+      - name: gclid
+        description: Google Click Identifier.
+
+      - name: page_location
+        description: The full URL of the page where the session started.
+
+      - name: page_referrer
+        description: The full URL of the referring page, if available.
+
+  - name: activity__form_submitted
+    description: >
+      Activity schema model for form_submit events. Each row represents a
+      form submission with its associated traffic source attribution and
+      form context, enabling temporal join attribution downstream.
+    columns:
+      - name: activity_id
+        description: Surrogate key derived from session_uid and event_timestamp.
+
+      - name: user_pseudo_id
+        description: The pseudonymous user identifier set by the GA4 client.
+
+      - name: session_uid
+        description: Composite session key (user_pseudo_id + ga_session_id).
+
+      - name: activity_at
+        description: Timestamp of the form_submit event in UTC.
+
+      - name: source
+        description: Traffic source, resolved via 3-tier UTM coalescing.
+
+      - name: medium
+        description: Traffic medium, resolved via 3-tier UTM coalescing.
+
+      - name: campaign
+        description: Campaign name, resolved via 3-tier UTM coalescing.
+
+      - name: gclid
+        description: Google Click Identifier.
+
+      - name: page_location
+        description: The full URL of the page where the form was submitted.
+
+      - name: form_id
+        description: The identifier of the submitted form.

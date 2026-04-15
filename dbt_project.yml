@@ -1,0 +1,33 @@
+name: 'ga4_attribution'
+version: '1.0.0'
+
+profile: 'ga4_attribution'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  ga4_attribution:
+    staging:
+      +materialized: view
+      +schema: staging
+    activity:
+      +materialized: view
+      +schema: activity
+    identity:
+      +materialized: table
+      +schema: identity
+    attribution:
+      +materialized: table
+      +schema: attribution
+    analytics:
+      +materialized: table
+      +schema: analytics

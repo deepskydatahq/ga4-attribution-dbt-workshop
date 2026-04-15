@@ -1,0 +1,75 @@
+version: 2
+
+models:
+  - name: business_identity__anon
+    description: >
+      One row per anonymous visitor identified by user_pseudo_id. Maps each
+      GA4 pseudonymous ID to an anon_id (currently 1:1). This is the
+      extensibility point where cross-device or cookie-stitching resolution
+      would collapse multiple pseudo IDs into a single anonymous identity.
+    columns:
+      - name: anon_id
+        description: >
+          Resolved anonymous identity key. Currently equal to user_pseudo_id;
+          in production this would be the output of identity resolution logic.
+        tests:
+          - unique
+          - not_null
+
+      - name: user_pseudo_id
+        description: >
+          The GA4 pseudonymous user identifier. Persists across sessions on the
+          same device/browser until cookies are cleared.
+        tests:
+          - unique
+          - not_null
+
+      - name: first_seen_at
+        description: Timestamp of the visitor's earliest recorded event.
+
+      - name: last_seen_at
+        description: Timestamp of the visitor's most recent recorded event.
+
+  - name: business_identity__person
+    description: >
+      Structural placeholder that maps anonymous visitors (anon_id) to known
+      people. In production, this is where CRM contact data (e.g. Salesforce)
+      would be joined on email to resolve anon_id to person_id.
+    columns:
+      - name: person_id
+        description: >
+          Unique identifier for a known person. Sourced from CRM contact ID
+          when the integration is active.
+
+      - name: anon_id
+        description: >
+          Foreign key to business_identity__anon. Links the known person back
+          to their anonymous browsing identity.
+
+      - name: email
+        description: Email address used as the join key between GA4 and CRM data.
+
+      - name: matched_at
+        description: Timestamp when the anonymous identity was resolved to this person.
+
+  - name: business_identity__account
+    description: >
+      Structural placeholder that maps known people (person_id) to company
+      accounts. In production, this is where CRM account data (e.g. Salesforce)
+      would be joined to roll up person-level attribution to the account level.
+    columns:
+      - name: account_id
+        description: >
+          Unique identifier for a company account. Sourced from CRM account ID
+          when the integration is active.
+
+      - name: person_id
+        description: >
+          Foreign key to business_identity__person. Links the account back to
+          the known person.
+
+      - name: account_name
+        description: The name of the company account from the CRM system.
+
+      - name: matched_at
+        description: Timestamp when the person was matched to this account.

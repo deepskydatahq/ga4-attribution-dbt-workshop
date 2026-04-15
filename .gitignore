@@ -1,0 +1,21 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Local credentials — never commit
+profiles-local.yml
+.secrets

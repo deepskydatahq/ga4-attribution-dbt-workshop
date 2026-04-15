@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: stg_ga4__events
+    description: >
+      Staging model that filters raw GA4 events to a marketing-relevant allowlist,
+      flattens event_params into scalar columns, and applies 3-tier UTM coalescing
+      (session_traffic_source_last_click > collected_traffic_source > event_params).
+    columns:
+      - name: event_date
+        description: The date of the event, parsed from the YYYYMMDD string partition key.
+
+      - name: event_timestamp
+        description: The exact timestamp of the event in UTC, converted from microseconds.
+
+      - name: event_name
+        description: >
+          The GA4 event name. Filtered to: session_start, form_submit, form_start,
+          generated_lead, file_download.
+
+      - name: user_pseudo_id
+        description: >
+          The pseudonymous user identifier set by the GA4 client. Persists across sessions
+          on the same device/browser until cookies are cleared.
+
+      - name: ga_session_id
+        description: >
+          The GA4 session identifier extracted from event_params. An integer value that
+          uniquely identifies a session for a given user_pseudo_id.
+
+      - name: session_uid
+        description: >
+          A composite session key built as user_pseudo_id + '-' + ga_session_id.
+          Falls back to 'no-session' when ga_session_id is null.
+
+      - name: page_location
+        description: The full URL of the page where the event was fired.
+
+      - name: page_referrer
+        description: The full URL of the referring page, if available.
+
+      - name: form_id
+        description: >
+          The identifier of the form involved in form_submit, form_start, or
+          generated_lead events. Null for non-form events.
+
+      - name: source
+        description: >
+          The traffic source, resolved via 3-tier coalescing:
+          session_traffic_source_last_click.source (excluding '(not set)'),
+          then collected_traffic_source.manual_source,
+          then the source event parameter.
+
+      - name: medium
+        description: >
+          The traffic medium, resolved via 3-tier coalescing:
+          session_traffic_source_last_click.medium (excluding '(not set)'),
+          then collected_traffic_source.manual_medium,
+          then the medium event parameter.
+
+      - name: campaign
+        description: >
+          The campaign name, resolved via 3-tier coalescing:
+          session_traffic_source_last_click.campaign (excluding '(not set)'),
+          then collected_traffic_source.manual_campaign_name,
+          then the campaign event parameter.
+
+      - name: gclid
+        description: >
+          The Google Click Identifier, coalesced from collected_traffic_source.gclid
+          and the gclid event parameter.
+
+      - name: device_category
+        description: The device category (desktop, mobile, tablet) from the device struct.
+
+      - name: country
+        description: The country of the user derived from IP geolocation.

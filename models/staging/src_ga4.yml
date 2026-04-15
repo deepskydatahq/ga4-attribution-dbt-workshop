@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: ga4
+    database: "{{ var('ga4_project', 'your-gcp-project') }}"
+    schema: "{{ var('ga4_dataset', 'analytics_NNNNNN') }}"
+    tables:
+      - name: events
+        identifier: "events_*"
+        description: >
+          Raw GA4 BigQuery Export event-level table.
+          Uses wildcard table suffix to query across all date-sharded partitions.

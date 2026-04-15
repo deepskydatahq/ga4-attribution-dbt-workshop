@@ -1,0 +1,105 @@
+version: 2
+
+models:
+  - name: analytics_user
+    description: >
+      User-level analytics summary. One row per anonymous visitor (anon_id).
+      Combines identity, session, and conversion data to provide a
+      consumption-ready view of each user's engagement and acquisition channels.
+    columns:
+      - name: anon_id
+        description: Resolved anonymous identity key from business_identity__anon.
+        tests:
+          - unique
+          - not_null
+
+      - name: first_seen_at
+        description: Timestamp of the user's earliest observed event.
+
+      - name: last_seen_at
+        description: Timestamp of the user's most recent observed event.
+
+      - name: num_sessions
+        description: Total number of sessions started by this user.
+
+      - name: total_conversions
+        description: Total number of form submissions (conversions) by this user.
+
+      - name: first_touch_source
+        description: Traffic source of the user's earliest session ever (activity view).
+
+      - name: first_touch_medium
+        description: Traffic medium of the user's earliest session ever (activity view).
+
+      - name: last_touch_source
+        description: Traffic source of the user's most recent session ever (activity view).
+
+      - name: last_touch_medium
+        description: Traffic medium of the user's most recent session ever (activity view).
+
+      - name: first_touch_conversion_source
+        description: >
+          Traffic source credited as first-touch for the user's MOST RECENT
+          conversion. Sourced from attribution__first_touch. NULL for users
+          who never converted.
+
+      - name: first_touch_conversion_medium
+        description: >
+          Traffic medium credited as first-touch for the user's most recent
+          conversion. NULL for non-converters.
+
+      - name: last_touch_conversion_source
+        description: >
+          Traffic source credited as last-touch for the user's MOST RECENT
+          conversion. Sourced from attribution__last_touch. NULL for users
+          who never converted.
+
+      - name: last_touch_conversion_medium
+        description: >
+          Traffic medium credited as last-touch for the user's most recent
+          conversion. NULL for non-converters.
+
+  - name: analytics_marketing
+    description: >
+      Marketing channel summary. One row per source/medium pair. Combines
+      raw session and conversion counts with attributed conversions from
+      four attribution models for easy channel comparison.
+    columns:
+      - name: source
+        description: Traffic source (e.g., google, facebook, direct). Can be NULL for direct/unattributed traffic.
+
+      - name: medium
+        description: Traffic medium (e.g., organic, cpc, referral). Can be NULL for direct/unattributed traffic.
+
+      - name: total_sessions
+        description: Total number of sessions from this source/medium.
+
+      - name: total_conversions
+        description: Total raw form submissions from this source/medium.
+
+      - name: total_unique_converters
+        description: Distinct customers who converted on a session attributed to this source/medium.
+
+      - name: first_touch_conversions
+        description: Attributed conversions under the first-touch model (SUM of credit_weight).
+
+      - name: first_touch_unique_converters
+        description: Distinct customers credited to this source/medium as first touch.
+
+      - name: last_touch_conversions
+        description: Attributed conversions under the last-touch model (SUM of credit_weight).
+
+      - name: last_touch_unique_converters
+        description: Distinct customers credited to this source/medium as last touch.
+
+      - name: linear_conversions
+        description: Attributed conversions under the linear model (SUM of credit_weight).
+
+      - name: linear_unique_converters
+        description: Distinct customers with at least one touchpoint credited to this source/medium under linear.
+
+      - name: position_based_conversions
+        description: Attributed conversions under the position-based model (SUM of credit_weight).
+
+      - name: position_based_unique_converters
+        description: Distinct customers with at least one touchpoint credited to this source/medium under position-based.
