@@ -71,13 +71,15 @@ a property to BigQuery — typically `analytics_XXXXXXXXX`.
 
 ## Project layout
 
+Folders are numbered so they sort in DAG / dependency order when browsing.
+
 | Folder | Materialization | Purpose |
 |--------|-----------------|---------|
-| `models/staging/`     | view  | Clean GA4 events — one source of truth for downstream layers |
-| `models/activity/`    | view  | Activity Schema v2 feeders + unified `activity_stream` |
-| `models/identity/`    | table | Resolve `user_pseudo_id` to a canonical `anon_id` |
-| `models/attribution/` | table | Four attribution models on top of the activity stream |
-| `models/analytics/`   | table | Consumption marts for users and channels |
+| `models/01_staging/`     | view  | Clean GA4 events — one source of truth for downstream layers |
+| `models/02_activity/`    | view  | Activity Schema v2 feeders + unified `activity_stream` |
+| `models/03_identity/`    | table | Resolve `user_pseudo_id` to a canonical `anon_id` |
+| `models/04_attribution/` | table | Four attribution models on top of the activity stream |
+| `models/05_analytics/`   | table | Consumption marts for users and channels |
 
 ## Variables
 
