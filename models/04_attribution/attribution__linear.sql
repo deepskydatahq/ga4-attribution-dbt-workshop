@@ -8,20 +8,19 @@
 -- to one row per (conversion × touchpoint) pair so each touchpoint can carry
 -- its own fractional credit_weight — a different output grain.
 --
--- We reuse the same temporal join MECHANICS (self-join on activity_stream
--- with s.ts < c.ts), but skip the "pick one" step: every preceding session
--- survives, and credit_weight = 1.0 / touch_count. Weights sum to 1.0 per
--- conversion by construction.
+-- We reuse the temporal join MECHANICS but skip the "pick one" step: every
+-- preceding session survives, and credit_weight = 1.0 / touch_count. Weights
+-- sum to 1.0 per conversion by construction.
 
 select
-    c.activity_id    as conversion_id,
-    s.session_uid,
+    c.activity_id                                  as conversion_id,
+    json_value(s.feature_json, '$.session_uid')    as session_uid,
     c.customer,
-    s.source,
-    s.medium,
-    s.campaign,
-    s.ts             as activity_at,
-    c.ts             as conversion_at,
+    json_value(s.feature_json, '$.source')         as source,
+    json_value(s.feature_json, '$.medium')         as medium,
+    json_value(s.feature_json, '$.campaign')       as campaign,
+    s.ts                                            as activity_at,
+    c.ts                                            as conversion_at,
     1.0 / count(*) over (partition by c.activity_id) as credit_weight
 
 from {{ ref('activity_stream') }} c

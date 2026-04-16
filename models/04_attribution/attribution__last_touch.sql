@@ -8,19 +8,19 @@
 -- Relationship      = Last Before — attach the most recent append for the
 --                     same customer that happened before the primary.
 --
--- Identical to first_touch except QUALIFY orders DESC to keep the latest
--- touchpoint. Output grain: one row per conversion (canonical shape).
+-- Because we follow strict v2, session_uid and the UTMs live inside
+-- feature_json — we unpack them with JSON_VALUE in the SELECT.
 
 select
-    c.activity_id    as conversion_id,
-    s.session_uid,
+    c.activity_id                                  as conversion_id,
+    json_value(s.feature_json, '$.session_uid')    as session_uid,
     c.customer,
-    s.source,
-    s.medium,
-    s.campaign,
-    s.ts             as activity_at,
-    c.ts             as conversion_at,
-    1.0              as credit_weight
+    json_value(s.feature_json, '$.source')         as source,
+    json_value(s.feature_json, '$.medium')         as medium,
+    json_value(s.feature_json, '$.campaign')       as campaign,
+    s.ts                                            as activity_at,
+    c.ts                                            as conversion_at,
+    1.0                                             as credit_weight
 
 from {{ ref('activity_stream') }} c
 inner join {{ ref('activity_stream') }} s
@@ -33,5 +33,5 @@ where c.activity    = 'form_submitted'
 
 qualify row_number() over (
     partition by c.activity_id
-    order by s.ts desc                     -- DESC = last touch
+    order by s.ts desc                             -- DESC = last touch
 ) = 1

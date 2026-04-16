@@ -3,72 +3,109 @@ version: 2
 models:
   - name: activity__session_started
     description: >
-      Activity schema model for session_start events. Each row represents a
-      session initiation with its associated traffic source attribution and
-      page context, enabling temporal join attribution downstream.
+      Activity Schema v2 feeder for session_start events. One row per
+      deduplicated session start. Strict v2 shape — only canonical columns
+      at the top level; session_uid, source, medium, campaign, gclid,
+      and page_referrer all live inside feature_json.
     columns:
       - name: activity_id
-        description: Surrogate key derived from session_uid and event_timestamp.
-
-      - name: user_pseudo_id
-        description: The pseudonymous user identifier set by the GA4 client.
-
-      - name: session_uid
-        description: Composite session key (user_pseudo_id + ga_session_id).
-
-      - name: activity_at
-        description: Timestamp of the session_start event in UTC.
-
-      - name: source
-        description: Traffic source, resolved via 3-tier UTM coalescing.
-
-      - name: medium
-        description: Traffic medium, resolved via 3-tier UTM coalescing.
-
-      - name: campaign
-        description: Campaign name, resolved via 3-tier UTM coalescing.
-
-      - name: gclid
-        description: Google Click Identifier.
-
-      - name: page_location
-        description: The full URL of the page where the session started.
-
-      - name: page_referrer
-        description: The full URL of the referring page, if available.
+        description: Surrogate primary key for this activity occurrence.
+        tests:
+          - unique
+          - not_null
+      - name: ts
+        description: TIMESTAMP when this activity happened.
+        tests:
+          - not_null
+      - name: customer
+        description: Resolved identity (anon_id). NULL if the user_pseudo_id has no identity row.
+      - name: activity
+        description: Activity name — always 'session_started' in this feeder.
+      - name: anonymous_customer_id
+        description: Raw user_pseudo_id from GA4 — the cookie-level anonymous identifier.
+      - name: revenue_impact
+        description: v2 standard column — NULL for non-monetary activities.
+      - name: link
+        description: Canonical URL for the activity (landing page).
+      - name: feature_json
+        description: >
+          JSON blob of activity-specific features —
+          {session_uid, source, medium, campaign, gclid, page_referrer}.
+          Extract with JSON_VALUE(feature_json, '$.field').
+      - name: activity_occurrence
+        description: Nth time this customer performed this activity (1 = first ever).
+      - name: activity_repeated_at
+        description: ts of the next time this customer performs this activity. NULL for the most recent.
 
   - name: activity__form_submitted
     description: >
-      Activity schema model for form_submit events. Each row represents a
-      form submission with its associated traffic source attribution and
-      form context, enabling temporal join attribution downstream.
+      Activity Schema v2 feeder for form_submit events — the conversion
+      activity. Strict v2 shape; session_uid, source, medium, campaign,
+      gclid, and form_id all live inside feature_json.
     columns:
       - name: activity_id
-        description: Surrogate key derived from session_uid and event_timestamp.
+        description: Surrogate primary key.
+        tests:
+          - unique
+          - not_null
+      - name: ts
+        description: TIMESTAMP of the form submission.
+        tests:
+          - not_null
+      - name: customer
+        description: Resolved identity (anon_id).
+      - name: activity
+        description: Activity name — always 'form_submitted' in this feeder.
+      - name: anonymous_customer_id
+        description: Raw user_pseudo_id from GA4.
+      - name: revenue_impact
+        description: NULL — revenue is not tracked on the form event itself.
+      - name: link
+        description: The URL where the form was submitted.
+      - name: feature_json
+        description: >
+          JSON blob of activity-specific features —
+          {session_uid, source, medium, campaign, gclid, form_id}.
+      - name: activity_occurrence
+        description: Nth form submission for this customer.
+      - name: activity_repeated_at
+        description: ts of this customer's next form submission. NULL for the most recent.
 
-      - name: user_pseudo_id
-        description: The pseudonymous user identifier set by the GA4 client.
-
-      - name: session_uid
-        description: Composite session key (user_pseudo_id + ga_session_id).
-
-      - name: activity_at
-        description: Timestamp of the form_submit event in UTC.
-
-      - name: source
-        description: Traffic source, resolved via 3-tier UTM coalescing.
-
-      - name: medium
-        description: Traffic medium, resolved via 3-tier UTM coalescing.
-
-      - name: campaign
-        description: Campaign name, resolved via 3-tier UTM coalescing.
-
-      - name: gclid
-        description: Google Click Identifier.
-
-      - name: page_location
-        description: The full URL of the page where the form was submitted.
-
-      - name: form_id
-        description: The identifier of the submitted form.
+  - name: activity_stream
+    description: >
+      Unified Activity Schema v2 stream. UNION of all activity feeders,
+      presented as one long table conforming to the strict v2 contract.
+      Downstream attribution and analytics models filter by the `activity`
+      column and extract activity-specific fields from feature_json.
+    columns:
+      - name: activity_id
+        description: Surrogate primary key across all activities.
+        tests:
+          - unique
+          - not_null
+      - name: ts
+        description: TIMESTAMP when the activity happened.
+        tests:
+          - not_null
+      - name: customer
+        description: Resolved identity (anon_id).
+      - name: activity
+        description: Activity name — determines how to interpret feature_json.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['session_started', 'form_submitted']
+      - name: anonymous_customer_id
+        description: Raw cookie-level identifier (user_pseudo_id).
+      - name: revenue_impact
+        description: Nullable numeric revenue impact.
+      - name: link
+        description: Canonical URL for the activity.
+      - name: feature_json
+        description: >
+          JSON blob of activity-specific features. Schema depends on `activity`.
+          Use JSON_VALUE(feature_json, '$.field') to extract.
+      - name: activity_occurrence
+        description: Nth occurrence of this activity for this customer.
+      - name: activity_repeated_at
+        description: ts of the next occurrence of this activity for this customer.

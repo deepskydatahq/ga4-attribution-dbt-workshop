@@ -10,14 +10,16 @@
 
 with sessions as (
 
-    -- Total sessions per source/medium — from the Activity Schema v2 stream
+    -- Total sessions per source/medium — from the Activity Schema v2 stream.
+    -- Strict v2 keeps source/medium inside feature_json — unpack first, then
+    -- aggregate.
     select
-        source,
-        medium,
+        json_value(feature_json, '$.source')    as source,
+        json_value(feature_json, '$.medium')    as medium,
         count(*) as total_sessions
     from {{ ref('activity_stream') }}
     where activity = 'session_started'
-    group by source, medium
+    group by 1, 2
 
 ),
 
@@ -25,13 +27,13 @@ conversions as (
 
     -- Raw conversions and unique converters per source/medium.
     select
-        source,
-        medium,
+        json_value(feature_json, '$.source')    as source,
+        json_value(feature_json, '$.medium')    as medium,
         count(*)                  as total_conversions,
         count(distinct customer)  as total_unique_converters
     from {{ ref('activity_stream') }}
     where activity = 'form_submitted'
-    group by source, medium
+    group by 1, 2
 
 ),
 

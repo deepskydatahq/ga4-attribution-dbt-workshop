@@ -4,9 +4,8 @@
 -- canonical Activity Schema temporal join).
 --
 -- Same reason as linear: the output is one row per (conversion × touchpoint),
--- not one row per conversion, because each touchpoint gets its own weighted
--- credit. We reuse the temporal self-join mechanics but the shape differs
--- from the 12 canonical types.
+-- not one row per conversion. We reuse the temporal self-join mechanics but
+-- the shape differs from the 12 canonical types.
 --
 -- Weighting:
 --   1 touch    → 1.0
@@ -16,14 +15,14 @@
 with touchpoints as (
 
     select
-        c.activity_id    as conversion_id,
-        s.session_uid,
+        c.activity_id                                  as conversion_id,
+        json_value(s.feature_json, '$.session_uid')    as session_uid,
         c.customer,
-        s.source,
-        s.medium,
-        s.campaign,
-        s.ts             as activity_at,
-        c.ts             as conversion_at,
+        json_value(s.feature_json, '$.source')         as source,
+        json_value(s.feature_json, '$.medium')         as medium,
+        json_value(s.feature_json, '$.campaign')       as campaign,
+        s.ts                                            as activity_at,
+        c.ts                                            as conversion_at,
 
         row_number() over (partition by c.activity_id order by s.ts asc)  as position_asc,
         row_number() over (partition by c.activity_id order by s.ts desc) as position_desc,

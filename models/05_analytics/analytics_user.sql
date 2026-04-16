@@ -34,12 +34,13 @@ with identity as (
 
 sessions as (
 
-    -- All session_started activities from the v2 stream
+    -- All session_started activities from the v2 stream.
+    -- Strict v2 keeps source/medium inside feature_json — unpack them here.
     select
-        customer as anon_id,
+        customer                                as anon_id,
         ts,
-        source,
-        medium
+        json_value(feature_json, '$.source')    as source,
+        json_value(feature_json, '$.medium')    as medium
     from {{ ref('activity_stream') }}
     where activity = 'session_started'
       and customer is not null

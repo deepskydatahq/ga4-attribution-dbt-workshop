@@ -1,8 +1,8 @@
 -- activity__form_submitted.sql
 --
 -- Activity Schema v2 feeder for form_submit events — the conversion activity.
--- One row per form submission, shaped to the same v2 contract as every other
--- feeder so downstream queries can treat all activities uniformly.
+-- Strict v2 shape: only canonical columns at the top level; session_uid,
+-- attribution UTMs, and form_id all live inside feature_json.
 
 with form_submits as (
 
@@ -25,22 +25,21 @@ deduped as (
 
 joined as (
 
-    -- Resolve customer identity by joining to the identity spine.
     select
         {{ dbt_utils.generate_surrogate_key(['s.session_uid', 's.event_timestamp']) }}  as activity_id,
         s.event_timestamp                                                                as ts,
         i.anon_id                                                                        as customer,
         cast('form_submitted' as string)                                                 as activity,
         s.user_pseudo_id                                                                 as anonymous_customer_id,
-        s.session_uid,
-        s.source,
-        s.medium,
-        s.campaign,
-        s.gclid,
         cast(null as float64)                                                            as revenue_impact,
         s.page_location                                                                  as link,
         to_json_string(struct(
-            s.form_id as form_id
+            s.session_uid as session_uid,
+            s.source      as source,
+            s.medium      as medium,
+            s.campaign    as campaign,
+            s.gclid       as gclid,
+            s.form_id     as form_id
         ))                                                                               as feature_json
     from deduped s
     left join {{ ref('business_identity__anon') }} i
@@ -54,11 +53,6 @@ select
     customer,
     activity,
     anonymous_customer_id,
-    session_uid,
-    source,
-    medium,
-    campaign,
-    gclid,
     revenue_impact,
     link,
     feature_json,
